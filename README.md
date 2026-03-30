@@ -77,6 +77,11 @@ This is the place for you to write reflections:
 ### Mandatory (Publisher) Reflections
 
 #### Reflection Publisher-1
+1. In this BambangShop case, a single `Subscriber` model struct is enough for the current stage. Every subscriber stores the same data (`url` and `name`) and follows the same behavior, which is receiving notifications through an HTTP POST request. Because there is only one concrete subscriber behavior right now, adding a trait would introduce extra abstraction without much benefit. A trait would become useful later if we supported multiple observer types with different update mechanisms, such as webhooks, email notifications, or message-queue consumers.
+
+2. Since `id` in `Product` and `url` in `Subscriber` are intended to be unique keys, using only `Vec` would work but would not be a good fit. With `Vec`, we would need to scan the list to check duplicates, search entries, and delete entries, so the uniqueness rule would be enforced manually and repeatedly. A map structure models this requirement better because the key itself represents uniqueness. In this project, `DashMap` makes lookup and deletion by key more direct, and for subscribers it fits the nested structure of `product_type -> url -> Subscriber`.
+
+3. `DashMap` and Singleton solve different problems, so Singleton cannot replace `DashMap`. Singleton only guarantees that there is one shared instance of a data store, while `DashMap` guarantees that the shared data can be accessed and mutated safely from multiple threads. In fact, `lazy_static!` already gives us singleton-like access to `SUBSCRIBERS`, but we still need a thread-safe container inside that singleton because Rocket can handle multiple requests concurrently. If we did not use `DashMap`, we would still need another synchronization mechanism such as `Mutex` or `RwLock`. Therefore, in this case Singleton alone is not enough.
 
 #### Reflection Publisher-2
 
